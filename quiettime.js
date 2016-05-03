@@ -24,7 +24,9 @@ var app = express(),
         'HMAC-SHA1')
 
 
-console.log('connecting to MongoDB')
+console.log(config)
+
+console.log('connecting to MongoDB: ' + config.database)
 MongoClient.connect(config.database, function (err, db) {
     if (err) {
         console.log('error connecting to MongoDB: ' + err)
@@ -118,7 +120,7 @@ MongoClient.connect(config.database, function (err, db) {
     app.get('/', function (req, res) {
         if (req.session.user) {
             lookupUser(req.session.user, function (err, user) {
-                if (err) {
+                if (err || !user) {
                     res.sendStatus(400)
                     console.log('Failed to find user: ' + err)
                     return
@@ -195,14 +197,16 @@ MongoClient.connect(config.database, function (err, db) {
                         accessTokenSecret: tokenSecret,
                     },
                 }, {
-                    upsert: true
+                    // create a new user if one does not already exist
+                    upsert: true,
+                    // return the updated (or newly created object) as value
+                    returnOriginal: false,
                 }, function(err, result) {
                     if (err) {
                         console.log(err)
                         res.sendStatus(400)
                         return
                     }
-                    console.log(result.value)
                     req.session.user = result.value._id
                     res.redirect('/')
                 })
@@ -212,7 +216,7 @@ MongoClient.connect(config.database, function (err, db) {
 
     app.post('/mute', function (req, res) {
         lookupUser(req.session.user, function (err, user) {
-            if (err) {
+            if (err || !user) {
                 res.sendStatus(400)
                 console.log('Failed to find user: ' + err)
                 return
@@ -238,7 +242,7 @@ MongoClient.connect(config.database, function (err, db) {
 
     app.post('/unmute', function (req, res) {
         lookupUser(req.session.user, function (err, user) {
-            if (err) {
+            if (err || !user) {
                 res.sendStatus(400)
                 console.log('Failed to find user: ' + err)
                 return
