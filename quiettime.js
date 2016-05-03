@@ -81,13 +81,24 @@ MongoClient.connect(config.database, function (err, db) {
         console.log('attempting to unmute ' + screenName)
         oauth.post(API_BASE + 'mutes/users/destroy.json', user.accessToken, user.accessTokenSecret, {screen_name: screenName}, function (err, data, response) {
             if (err) {
-                console.log(err)
-                cb(err, null)
-                return
+                var ignore = false;
+
+                if (err.data) {
+                    var errData = JSON.parse(err.data)
+                    if (errData.errors.some(function (o) { return o.code === 272 })) {
+                        console.log(screenName + ' already unmuted, moving on!')
+                        ignore = true;
+                    }
+                }
+
+                if (!ignore) {
+                    console.log(err)
+                    cb(err, null)
+                    return
+                }
             }
 
             console.log('removing ' + screenName + ' from list of mutes')
-
             db.collection('users').updateOne({_id: user._id}, {
                 '$unset': {
                     ['mutes.' + screenName]: '',

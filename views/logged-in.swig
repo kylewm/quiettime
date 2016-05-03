@@ -4,7 +4,7 @@
   <p>
     Enter a Twitter name to mute and select a duration. When the time's up they'll
     be automatically unmuted.
-    <a href="/logout">Or sign out</a>.</form>
+    <a href="/logout">(sign out)</a>.</form>
   </p>
 
   <form method="POST" action="/mute" class="row">
