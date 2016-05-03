@@ -1,0 +1,6 @@
+var config = {
+    database: 'mongodb://localhost:27017/quiettime',
+    clientKey: 'twitter app key',
+    clientSecret: 'twitter app secret',
+    sessionSecret: 'secret used to encrypt session',
+}

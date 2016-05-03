@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "body-parser": "^1.15.0",
+    "bootstrap": "^3.3.6",
+    "bootswatch": "^3.3.6",
+    "connect-mongo": "^1.1.0",
+    "cookie-parser": "^1.4.1",
+    "express": "^4.13.4",
+    "express-session": "^1.13.0",
+    "jquery": "^2.2.3",
+    "moment": "^2.13.0",
+    "mongodb": "^2.1.18",
+    "oauth": "^0.9.14"
+  }
+}
