@@ -1,4 +1,5 @@
 var fs = require('fs'),
+    url = require('url'),
     express = require('express'),
     expressSession = require('express-session'),
     cookieParser = require('cookie-parser'),
@@ -20,11 +21,8 @@ var app = express(),
         config.clientKey,
         config.clientSecret,
         '1.0A',
-        'http://localhost:3000/callback',
+        url.resolve(config.baseUrl, '/callback'),
         'HMAC-SHA1')
-
-
-console.log(config)
 
 console.log('connecting to MongoDB: ' + config.database)
 MongoClient.connect(config.database, function (err, db) {
@@ -259,8 +257,8 @@ MongoClient.connect(config.database, function (err, db) {
         })
     })
 
-    console.log('listening on port 3000')
-    app.listen(3000)
+    console.log('listening on port ' + config.port)
+    app.listen(config.port)
 
     setTimeout(tick, UPDATE_INTERVAL)
 })

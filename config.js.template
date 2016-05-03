@@ -1,6 +1,9 @@
 var config = {
+    port: 3000,
+    baseUrl: 'http://quiettime.xyz',
     database: 'mongodb://localhost:27017/quiettime',
-    clientKey: 'twitter app key',
-    clientSecret: 'twitter app secret',
-    sessionSecret: 'secret used to encrypt session',
+    clientKey: '...',
+    clientSecret: '...',
+    sessionSecret: '...',
 }
+module.exports = config
