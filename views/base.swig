@@ -48,6 +48,7 @@
 
     </div>
 
+    {% block scripts %}
     <script src="/jquery/jquery.min.js"></script>
     <script src="/bootstrap/js/bootstrap.min.js"></script>
     <script src="/moment/moment.min.js"></script>
@@ -61,6 +62,6 @@
         updateTimestamps();
         setInterval(updateTimestamps, 30000);
     </script>
-
+    {% endblock scripts %}
   </body>
 </html>

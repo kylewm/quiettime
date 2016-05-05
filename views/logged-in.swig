@@ -18,7 +18,7 @@
       <div class="list-group">
         <button class="btn btn-primary" name="duration" type="submit" value="3600" title="Live-tweeting Keeping up with the Kardashians">1 hour</button>
 
-        <button class="btn btn-default" name="duration" type="submit" value="300" title="Let's just see if this thing works">5 minutes</button>
+        <button class="btn btn-default" name="duration" type="submit" value="30" title="Let's just see if this thing works">30 seconds</button>
         <button class="btn btn-default" name="duration" type="submit" value="1800" title="Now, I don't want to get off on a rant here">30 minutes</button>
         <button class="btn btn-default" name="duration" type="submit" value="7200" title="At a sporting event you are tired of hearing about">2 hours</button>
         <button class="btn btn-default" name="duration" type="submit" value="28800" title="Updating everyone on the status of their delayed flight">8 hours</button>
@@ -37,7 +37,7 @@
 
     <ul>
       {% for screenName, info in user.mutes %}
-        <li>
+        <li id="item-{{screenName}}">
           <strong><a href="https://twitter.com/{{screenName}}" target="_blank">{{ screenName }}</a>:</strong> unmute <time class="relative-time" datetime="{{ info.endTime | date('c') }}">{{ info.endTime | date('r') }}</time>
           <form method="POST" action="/unmute" style="display: inline">
             <input type="hidden" name="screen_name" value="{{ screenName }}" />
@@ -49,3 +49,18 @@
   {% endif %}
 
 {% endblock main %}
+
+{% block scripts %}
+  {% parent %}
+
+  <script type="text/javascript">
+    var source = new EventSource('/events')
+
+    source.addEventListener('unmute', function(e) {
+        console.log(e)
+        $('#item-' + e.data).remove()
+    }, false)
+
+  </script>
+
+{% endblock scripts %}

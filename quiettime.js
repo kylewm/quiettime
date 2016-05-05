@@ -6,6 +6,7 @@ var fs = require('fs'),
     bodyParser = require('body-parser'),
     pg = require('pg'),
     RedisStore = require('connect-redis')(expressSession),
+    EventEmitter = require('events'),
     OAuth = require('oauth'),
     swig = require('swig'),
     config = require('./config')
@@ -42,6 +43,8 @@ app.use('/static', express.static(__dirname + '/static'))
 app.engine('swig', swig.renderFile)
 app.set('view engine', 'swig')
 app.set('views', __dirname + '/views')
+
+var muteEvents = new EventEmitter()
 
 function lookupUser(userId, cb) {
     pg.connect(config.database, function (err, client, done) {
@@ -106,6 +109,7 @@ function mute(userId, accessToken, accessTokenSecret, screenName, startTime, end
             var handleSuccess = function () {
                 if (client) {done(client)}
                 cb()
+                muteEvents.emit('mute', userId, screenName)
                 return true
             }
 
@@ -159,6 +163,7 @@ function unmute(userId, accessToken, accessTokenSecret, screenName, cb) {
             client.query('delete from "mute" where user_id = $1 and screen_name = $2', [userId, screenName], function (err, result) {
                 done()
                 cb()
+                muteEvents.emit('unmute', userId, screenName)
             })
         })
     })
@@ -344,6 +349,44 @@ app.post('/unmute', function (req, res) {
             res.redirect('/')
         })
     })
+})
+
+app.get('/events', function (req, res) {
+    // let request last as long as possible
+    req.socket.setTimeout(0)
+
+    var loggedInUserId = req.session.user,
+        messageCount = 0
+
+    if (!loggedInUserId) {
+        res.sendStatus(403)
+        return
+    }
+
+    var unmuteCallback = function (userId, screenName) {
+        console.log('unmuteCallback: ' + userId + ', ' + screenName)
+
+        if (loggedInUserId === userId) {
+            messageCount++
+            res.write('event: unmute\n')
+            res.write('id: ' + messageCount + '\n')
+            res.write('data: ' + screenName + '\n\n')
+        }
+    }
+
+    muteEvents.on('unmute', unmuteCallback)
+
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+    })
+    res.flushHeaders()
+
+    req.on('close', function () {
+        muteEvents.removeListener('unmute', unmuteCallback)
+    })
+
 })
 
 console.log('listening on port ' + config.port)
