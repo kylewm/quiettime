@@ -1,4 +1,6 @@
-var fs = require('fs'),
+'use strict'
+
+let fs = require('fs'),
     url = require('url'),
     express = require('express'),
     expressSession = require('express-session'),
@@ -11,10 +13,10 @@ var fs = require('fs'),
     swig = require('swig'),
     config = require('./config')
 
-var API_BASE = 'https://api.twitter.com/1.1/',
+let API_BASE = 'https://api.twitter.com/1.1/',
     UPDATE_INTERVAL = 10000
 
-var app = express(),
+let app = express(),
     oauth = new OAuth.OAuth(
         'https://api.twitter.com/oauth/request_token',
         'https://api.twitter.com/oauth/access_token',
@@ -44,11 +46,11 @@ app.engine('swig', swig.renderFile)
 app.set('view engine', 'swig')
 app.set('views', __dirname + '/views')
 
-var muteEvents = new EventEmitter()
+let muteEvents = new EventEmitter()
 
 function lookupUser(userId, cb) {
     pg.connect(config.database, function (err, client, done) {
-        var handleError = function (err) {
+        let handleError = function (err) {
             if (!err) {return false}
             if (client) {done(client)}
             cb(err)
@@ -66,7 +68,7 @@ function lookupUser(userId, cb) {
                 return
             }
 
-            var user = {
+            let user = {
                 id: userId,
                 screenName: result.rows[0].screen_name,
                 accessToken: result.rows[0].access_token,
@@ -74,7 +76,7 @@ function lookupUser(userId, cb) {
                 mutes: {},
             }
 
-            var query = client.query('select screen_name, start_time, end_time from "mute" where user_id=$1', [userId])
+            let query = client.query('select screen_name, start_time, end_time from "mute" where user_id=$1', [userId])
             query.on('error', handleError)
             query.on('row', function (row) {
                 user.mutes[row.screen_name] = {
@@ -99,14 +101,15 @@ function mute(userId, accessToken, accessTokenSecret, screenName, startTime, end
         }
 
         pg.connect(config.database, function (err, client, done) {
-            var handleError = function (err) {
+            let handleError = function (err) {
                 if (!err) {return false}
+                console.error(err)
                 if (client) {done(client)}
                 cb(err)
                 return true
             }
 
-            var handleSuccess = function () {
+            let handleSuccess = function () {
                 if (client) {done(client)}
                 cb()
                 muteEvents.emit('mute', userId, screenName)
@@ -136,10 +139,10 @@ function unmute(userId, accessToken, accessTokenSecret, screenName, cb) {
     console.log('attempting to unmute ' + screenName)
     oauth.post(API_BASE + 'mutes/users/destroy.json', accessToken, accessTokenSecret, {screen_name: screenName}, function (err, data, response) {
         if (err) {
-            var ignore = false;
+            let ignore = false;
 
             if (err.data) {
-                var errData = JSON.parse(err.data)
+                let errData = JSON.parse(err.data)
                 if (errData.errors.some(function (o) { return o.code === 272 })) {
                     console.log(screenName + ' already unmuted, moving on!')
                     ignore = true;
@@ -172,15 +175,16 @@ function unmute(userId, accessToken, accessTokenSecret, screenName, cb) {
 // search all users for muted friends that have expired
 function tick() {
     pg.connect(config.database, function (err, client, done) {
-        var handleError = function (err) {
+        let handleError = function (err) {
             if (!err) {return false}
+            console.error(err)
             if (client) {done(client)}
             return true
         }
 
         if (handleError(err)) { return }
 
-        var query = client.query('select "user".id uid, "user".access_token tok, "user".access_token_secret sec, mute.screen_name mname, mute.start_time mstart, mute.end_time mend from "user" join "mute" on "user".id = "mute".user_id', [])
+        let query = client.query('select "user".id uid, "user".access_token tok, "user".access_token_secret sec, mute.screen_name mname, mute.start_time mstart, mute.end_time mend from "user" join "mute" on "user".id = "mute".user_id', [])
         query.on('error', handleError)
         query.on('row', function (row) {
             if (row.mend && row.mend.getTime() <= Date.now()) {
@@ -241,9 +245,9 @@ app.get('/logout', function (req, res) {
 })
 
 app.get('/callback', function (req, res) {
-    var requestToken = req.query.oauth_token
-    var verifier = req.query.oauth_verifier
-    var requestSecret = req.session.requestTokenSecret
+    let requestToken = req.query.oauth_token
+    let verifier = req.query.oauth_verifier
+    let requestSecret = req.session.requestTokenSecret
     delete req.session.requestTokenSecret
 
     console.log('getting access token')
@@ -264,20 +268,21 @@ app.get('/callback', function (req, res) {
                 return
             }
 
-            var userInfo = JSON.parse(data),
+            let userInfo = JSON.parse(data),
                 twitterId = userInfo['id_str'],
                 screenName = userInfo['screen_name']
 
             console.log('looking for user with twitter id: ' + twitterId);
             pg.connect(config.database, function (err, client, done) {
-                var handleError = function (err) {
+                let handleError = function (err) {
                     if (!err) {return false}
+                    console.error(err)
                     if (client) {done(client)}
                     res.redirect('/')
                     return true
                 }
 
-                var handleSuccess = function () {
+                let handleSuccess = function () {
                     if (client) {done(client)}
                     req.session.user = twitterId
                     res.redirect('/')
@@ -314,7 +319,7 @@ app.post('/mute', function (req, res) {
             return
         }
 
-        var screenName = req.body.screen_name,
+        let screenName = req.body.screen_name,
             duration = req.body.duration,
             startTime = new Date(),
             endTime = new Date(startTime.getTime() + duration * 1000)
@@ -340,7 +345,7 @@ app.post('/unmute', function (req, res) {
             return
         }
 
-        var screenName = req.body.screen_name
+        let screenName = req.body.screen_name
 
         unmute(user.id, user.accessToken, user.accessTokenSecret, screenName, function (err, result) {
             if (err) {
@@ -355,7 +360,7 @@ app.get('/events', function (req, res) {
     // let request last as long as possible
     req.socket.setTimeout(0)
 
-    var loggedInUserId = req.session.user,
+    let loggedInUserId = req.session.user,
         messageCount = 0
 
     if (!loggedInUserId) {
@@ -363,7 +368,7 @@ app.get('/events', function (req, res) {
         return
     }
 
-    var unmuteCallback = function (userId, screenName) {
+    let unmuteCallback = function (userId, screenName) {
         console.log('unmuteCallback: ' + userId + ', ' + screenName)
 
         if (loggedInUserId === userId) {
